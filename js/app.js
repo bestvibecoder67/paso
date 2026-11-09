@@ -757,6 +757,48 @@
     resultButtons(extended, TAB);
   }
 
+  // ---------- one-time surprise: Paco from the street corner ----------
+  const PACO = {
+    intro: 'Eini Madrido gatve. Iš už kampo išlenda keistas vyrukas su akiniais nuo saulės. Naktį.',
+    open: [['Psst... ¡Oye, guapa! Ven aquí.', 'Pst... Ei, gražuole! Ateik čia.'],
+      ['¿Quieres CBD? Es del bueno. Cien por cien natural.', 'Nori CBD? Geras daiktas. Šimtu procentų natūralus.']],
+    choices: [
+      { es: 'No, gracias. Solo quiero aprender español.', lt: 'Ne, ačiū. Aš tik noriu išmokti ispanų kalbą.', reply: ['¿Español? ¡Eso es peor! Cuando empiezas, ya no puedes parar.', 'Ispanų? Tai dar blogiau! Kai pradedi, nebegali sustoti.'] },
+      { es: '¿Cuánto cuesta?', lt: 'Kiek kainuoja?', reply: ['Para ti, veinte euros. Si dices gracias muy bien, quince.', 'Tau – dvidešimt eurų. Jei labai gražiai pasakysi „gracias“, penkiolika.'] },
+      { es: '¡Socorro! ¡Policía!', lt: 'Gelbėkit! Policija!', reply: ['¡Tranquila, tranquila! Es legal... creo. ¡Adiós!', 'Ramiai, ramiai! Tai legalu... atrodo. Iki!'] },
+    ],
+    note: ['Una lección al día y nadie te para. Paco.', 'Viena pamoka per dieną, ir niekas tavęs nesustabdys. Paco.'],
+  };
+  function paco() {
+    S.pacoSeen = true; save();
+    sheet('<div class="pk-log" id="pklog"><div class="pk-h">🕶️</div></div><div id="pkfoot"></div>', (s, close) => {
+      const log = $('#pklog', s), foot = $('#pkfoot', s);
+      const say = (who, es, lt) => {
+        const d = document.createElement('div'); d.className = 'pk-line ' + who;
+        d.innerHTML = `${who === 'paco' ? '<div class="pk-av">🕶️</div>' : ''}<div class="pk-bub">${who === 'paco' ? '<div class="st-who">Paco</div>' : ''}${es ? `<div class="st-es">${esc(es)}</div>` : ''}<div class="st-lt">${esc(lt)}</div></div>`;
+        log.appendChild(d); d.scrollIntoView({ block: 'end', behavior: 'smooth' });
+        if (es) speak(es);
+      };
+      const btn = (label, fn) => { foot.innerHTML = `<button class="btn">${label}</button>`; foot.firstChild.onclick = fn; };
+      const ending = () => {
+        say('narr', '', 'Paco dingsta už kampo. Ant žemės lieka raštelis:');
+        say('note', ...PACO.note);
+        S.xp += 5; save();
+        btn('Grįžti mokytis 😎 +5 XP', () => { close(); render(); });
+      };
+      const choices = () => {
+        foot.innerHTML = `<div class="opts">${PACO.choices.map((c, i) => `<button class="opt" data-i="${i}"><div><b>${esc(c.es)}</b><div class="st-lt">${esc(c.lt)}</div></div></button>`).join('')}</div>`;
+        $$('.opt', foot).forEach(b => b.onclick = () => {
+          const c = PACO.choices[+b.dataset.i];
+          say('me', c.es, c.lt); foot.innerHTML = '';
+          setTimeout(() => { say('paco', ...c.reply); btn('Tęsti', ending); }, 2200);
+        });
+      };
+      say('narr', '', PACO.intro);
+      btn('Prieiti arčiau 👀', () => { say('paco', ...PACO.open[0]); btn('Klausytis toliau', () => { say('paco', ...PACO.open[1]); choices(); }); });
+    });
+  }
+
   // returning after days away gets a gentle restart (never mentions missed days)
   let AWAY = S.lastSeen ? diffDays(S.lastSeen, today()) : 0, RENDERED_DAY = today();
   S.lastSeen = today(); save();
@@ -768,4 +810,5 @@
 
   checkStreak();
   render();
+  if (!S.pacoSeen) { loadPack('paco'); setTimeout(() => { if (!SES && !STORY && !S.pacoSeen) paco(); }, 800); }
 })();
